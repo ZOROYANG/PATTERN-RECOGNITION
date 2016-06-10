@@ -5,7 +5,6 @@ import org.canova.api.split.FileSplit;
 import org.canova.image.recordreader.ImageRecordReader;
 import org.deeplearning4j.datasets.canova.RecordReaderDataSetIterator;
 import org.deeplearning4j.datasets.iterator.DataSetIterator;
-import org.deeplearning4j.datasets.iterator.impl.MnistDataSetIterator;
 import org.deeplearning4j.eval.Evaluation;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.GradientNormalization;
@@ -46,37 +45,66 @@ public class App
 
         // construct dataset
 
-        log.info("Load data...");
-        String dataPath = System.getProperty("user.home");
-        dataPath += "/Public/PATTERN_RECOGNITION/dataset/";
-        log.info(dataPath);
-
-        List<String> imageLabels = new ArrayList<String>();
-
-        for(File f : new File(dataPath).listFiles()){
-            imageLabels.add(f.getName());
-        }
-
-        log.info("Image Labels:");
-        for(String pathname : imageLabels){
-            log.info(pathname);
-        }
-
         final int numRows = 28;
         final int numColumns = 28;
         int outputNum = 10;
-        int numSamples = 600;
+        int trainSamples = 600;
         int batchSize = 750;
+        int testSamples = batchSize - trainSamples;
         int iterations = 200;
         int seed = 123;
         int listenerFreq = batchSize;
 
-        RecordReader recordReader = new ImageRecordReader(numRows, numColumns, true, imageLabels);
+        log.info("Load data...");
+        String dataPath = System.getProperty("user.home");
 
-        recordReader.initialize(new FileSplit(new File(dataPath)));
+        log.info("Load train...");
+        String trainDataPath = dataPath + "/Public/PATTERN_RECOGNITION/train_dataset/";
+        log.info(trainDataPath);
 
-        DataSetIterator iter = new RecordReaderDataSetIterator(recordReader, batchSize, -1, imageLabels.size());
+        List<String> trainImageLabels = new ArrayList<String>();
 
+        for(File f : new File(trainDataPath).listFiles()){
+            trainImageLabels.add(f.getName());
+        }
+
+        log.info("Image Labels:");
+        for(String pathname : trainImageLabels){
+            log.info(pathname);
+        }
+
+        RecordReader trainRecordReader = new ImageRecordReader(numRows, numColumns, true, trainImageLabels);
+
+        trainRecordReader.initialize(new FileSplit(new File(trainDataPath)));
+
+        DataSetIterator trainIter = new RecordReaderDataSetIterator(trainRecordReader, trainSamples, -1, trainImageLabels.size());
+
+        DataSet train = trainIter.next();
+        train.normalizeZeroMeanZeroUnitVariance();
+
+        log.info("Load test...");
+        String testDataPath = dataPath + "/Public/PATTERN_RECOGNITION/test_dataset/";
+        log.info(testDataPath);
+
+        List<String> testImageLabels = new ArrayList<String>();
+
+        for(File f : new File(testDataPath).listFiles()){
+            testImageLabels.add(f.getName());
+        }
+
+        log.info("Image Labels:");
+        for(String pathname : testImageLabels){
+            log.info(pathname);
+        }
+
+        RecordReader testRecordReader = new ImageRecordReader(numRows, numColumns, true, testImageLabels);
+
+        testRecordReader.initialize(new FileSplit(new File(testDataPath)));
+
+        DataSetIterator testIter = new RecordReaderDataSetIterator(testRecordReader, testSamples, -1, testImageLabels.size());
+
+        DataSet test = testIter.next();
+        test.normalizeZeroMeanZeroUnitVariance();
         // check dataset
         /*
         int counter = 0;
@@ -90,8 +118,11 @@ public class App
         log.info(Integer.toString(counter));
         */
 
+        /*
         DataSet next = iter.next();
         next.normalizeZeroMeanZeroUnitVariance();
+
+
 
         INDArray showme;
         log.info("Split data...");
@@ -105,7 +136,10 @@ public class App
         showme = test.getFeatureMatrix();
         System.out.println(showme);
         System.out.println("the matrix len is " + showme.rows() + " mpl " + showme.columns());
+        */
+
         Nd4j.ENFORCE_NUMERICAL_STABILITY = true;
+
 
 
         //DataSetIterator iter = new MnistDataSetIterator(batchSize, numSamples, true);
